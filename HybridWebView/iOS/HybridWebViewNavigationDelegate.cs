@@ -29,15 +29,20 @@ namespace Plugin.HybridWebView.iOS
         [Export("webView:decidePolicyForNavigationAction:decisionHandler:")]
         public override void DecidePolicy(WKWebView webView, WKNavigationAction navigationAction, Action<WKNavigationActionPolicy> decisionHandler)
         {
-            if (_reference == null || !_reference.TryGetTarget(out var renderer)) return;
-            if (renderer.Element == null) return;
+            if (_reference == null || !_reference.TryGetTarget(out var renderer) || renderer.Element == null)
+            {
+                decisionHandler(WKNavigationActionPolicy.Cancel);
+                return;
+            }
 
             // If navigation target frame is null, this can mean that the link contains target="_blank". Start loadrequest to perform the navigation
             if (navigationAction.TargetFrame == null)
             {
+                decisionHandler(WKNavigationActionPolicy.Cancel);
                 webView.LoadRequest(navigationAction.Request);
                 return;
             }
+            
             // If the navigation event originates from another frame than main (iframe?) it's not a navigation event we care about
             if (!navigationAction.TargetFrame.MainFrame)
             {
@@ -65,8 +70,11 @@ namespace Plugin.HybridWebView.iOS
 
         public override void DecidePolicy(WKWebView webView, WKNavigationResponse navigationResponse, Action<WKNavigationResponsePolicy> decisionHandler)
         {
-            if (_reference == null || !_reference.TryGetTarget(out var renderer)) return;
-            if (renderer.Element == null) return;
+            if (_reference == null || !_reference.TryGetTarget(out var renderer) || renderer.Element == null)
+            {
+                decisionHandler(WKNavigationResponsePolicy.Cancel);
+                return;
+            }
 
             if (navigationResponse.Response is NSHttpUrlResponse)
             {
