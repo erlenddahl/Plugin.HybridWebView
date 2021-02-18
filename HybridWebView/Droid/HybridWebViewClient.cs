@@ -22,8 +22,7 @@ namespace Plugin.HybridWebView.Droid
             if (_reference == null || !_reference.TryGetTarget(out var renderer)) return;
             if (renderer.Element == null) return;
 
-            renderer.Element.HandleNavigationError(errorResponse.StatusCode);
-            renderer.Element.HandleNavigationCompleted(request.Url.ToString());
+            renderer.Element.HandleNavigationError(errorResponse.StatusCode, request.Url.ToString());
             renderer.Element.Navigating = false;
         }
 
@@ -32,8 +31,7 @@ namespace Plugin.HybridWebView.Droid
             if (_reference == null || !_reference.TryGetTarget(out var renderer)) return;
             if (renderer.Element == null) return;
 
-            renderer.Element.HandleNavigationError((int)error.ErrorCode);
-            renderer.Element.HandleNavigationCompleted(request.Url.ToString());
+            renderer.Element.HandleNavigationError((int)error.ErrorCode, request.Url.ToString());
             renderer.Element.Navigating = false;
         }
 
@@ -156,23 +154,19 @@ namespace Plugin.HybridWebView.Droid
             if (_reference == null || !_reference.TryGetTarget(out var renderer)) return;
             if (renderer.Element == null) return;
 
-            // Add Injection Function
+            renderer.Element.HandleNavigationCompleted(url);
             await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.InjectedFunction);
 
-            // Add Global Callbacks
             if (renderer.Element.EnableGlobalCallbacks)
-                foreach (var callback in HybridWebViewControl.GlobalRegisteredCallbacks)
-                    await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.GenerateFunctionScript(callback.Key));
+                foreach (var function in HybridWebViewControl.GlobalRegisteredCallbacks)
+                    await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.GenerateFunctionScript(function.Key));
 
-            // Add Local Callbacks
-            foreach (var callback in renderer.Element.LocalRegisteredCallbacks)
-                await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.GenerateFunctionScript(callback.Key));
+            foreach (var function in renderer.Element.LocalRegisteredCallbacks)
+                await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.GenerateFunctionScript(function.Key));
 
             renderer.Element.CanGoBack = view.CanGoBack();
             renderer.Element.CanGoForward = view.CanGoForward();
             renderer.Element.Navigating = false;
-
-            renderer.Element.HandleNavigationCompleted(url);
             renderer.Element.HandleContentLoaded();
         }
     }

@@ -51,12 +51,12 @@ namespace Plugin.HybridWebView.Shared
         /// Fires when navigation is completed. This can be either as the result of a valid navigation, or on an error.
         /// Returns the URL of the page navigated to.
         /// </summary>
-        public event EventHandler<string> OnNavigationCompleted;
+        public event EventHandler<CompletionHandlerDelegate> OnNavigationCompleted;
 
         /// <summary>
         /// Fires when navigation fires an error. By default this uses the native systems error codes.
         /// </summary>
-        public event EventHandler<int> OnNavigationError;
+        public event EventHandler<CompletionHandlerDelegate> OnNavigationError;
 
         /// <summary>
         /// Fires when the content on the DOM is ready. All your calls to Javascript using C# should be performed after this is fired.
@@ -353,7 +353,7 @@ namespace Plugin.HybridWebView.Shared
             if (validUri)
                 validScheme = uriResult.Scheme.StartsWith("http") || uriResult.Scheme.StartsWith("file");
 
-            var handler = new DecisionHandlerDelegate()
+            var handler = new DecisionHandlerDelegate
             {
                 Uri = uri,
                 OffloadOntoDevice = validUri && !validScheme
@@ -363,14 +363,29 @@ namespace Plugin.HybridWebView.Shared
             return handler;
         }
 
-        internal void HandleNavigationCompleted(string uri)
+        internal CompletionHandlerDelegate HandleNavigationCompleted(string originatingUrl)
         {
-            OnNavigationCompleted?.Invoke(this, uri);
+            var handler = new CompletionHandlerDelegate
+            {
+                Uri = originatingUrl,
+                Code = 200 //todo: could we get a real code from native platforms? or maybe would null be better?
+            };
+            
+            OnNavigationCompleted?.Invoke(this, handler);
+
+            return handler;
         }
 
-        internal void HandleNavigationError(int errorCode)
+        internal CompletionHandlerDelegate HandleNavigationError(int errorCode, string originatingUrl)
         {
-            OnNavigationError?.Invoke(this, errorCode);
+            var handler = new CompletionHandlerDelegate
+            {
+                Uri = originatingUrl,
+                Code = errorCode
+            };
+            
+            OnNavigationError?.Invoke(this, handler);
+            return handler;
         }
 
         internal void HandleContentLoaded()

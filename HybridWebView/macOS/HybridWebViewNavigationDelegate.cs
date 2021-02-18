@@ -40,13 +40,13 @@ namespace Plugin.HybridWebView.macOS
             if (Reference == null || !Reference.TryGetTarget(out var renderer)) return;
             if (renderer.Element == null) return;
 
-            if (navigationResponse.Response is NSHttpUrlResponse)
+            if (navigationResponse.Response is NSHttpUrlResponse response)
             {
-                var code = ((NSHttpUrlResponse)navigationResponse.Response).StatusCode;
+                var code = response.StatusCode;
                 if (code >= 400)
                 {
                     renderer.Element.Navigating = false;
-                    renderer.Element.HandleNavigationError((int)code);
+                    renderer.Element.HandleNavigationError((int)code, response.Url.ToString());
                     decisionHandler(WKNavigationResponsePolicy.Cancel);
                     return;
                 }

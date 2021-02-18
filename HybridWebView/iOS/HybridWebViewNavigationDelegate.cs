@@ -76,13 +76,13 @@ namespace Plugin.HybridWebView.iOS
                 return;
             }
 
-            if (navigationResponse.Response is NSHttpUrlResponse)
+            if (navigationResponse.Response is NSHttpUrlResponse response)
             {
-                var code = ((NSHttpUrlResponse)navigationResponse.Response).StatusCode;
+                var code = response.StatusCode;
                 if (code >= 400)
                 {
                     renderer.Element.Navigating = false;
-                    renderer.Element.HandleNavigationError((int)code);
+                    renderer.Element.HandleNavigationError((int)code, response.Url.ToString());
                     decisionHandler(WKNavigationResponsePolicy.Cancel);
                     return;
                 }

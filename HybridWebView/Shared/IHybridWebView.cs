@@ -10,9 +10,9 @@ namespace Plugin.HybridWebView.Shared
     {
         event EventHandler<DecisionHandlerDelegate> OnNavigationStarted;
 
-        event EventHandler<string> OnNavigationCompleted;
+        event EventHandler<CompletionHandlerDelegate> OnNavigationCompleted;
 
-        event EventHandler<int> OnNavigationError;
+        event EventHandler<CompletionHandlerDelegate> OnNavigationError;
 
         event EventHandler OnContentLoaded;
 

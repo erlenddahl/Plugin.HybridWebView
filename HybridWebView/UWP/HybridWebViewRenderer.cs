@@ -173,7 +173,7 @@ namespace Plugin.HybridWebView.UWP
             if (Element == null) return;
 
             if (!args.IsSuccess)
-                Element.HandleNavigationError((int)args.WebErrorStatus);
+                Element.HandleNavigationError((int)args.WebErrorStatus, args.Uri.ToString());
 
             Element.CanGoBack = Control.CanGoBack;
             Element.CanGoForward = Control.CanGoForward;
