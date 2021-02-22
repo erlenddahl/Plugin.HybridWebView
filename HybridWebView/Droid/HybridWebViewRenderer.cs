@@ -161,9 +161,16 @@ namespace Plugin.HybridWebView.Droid
                 Control.GoBack();
         }
 
-        private void OnRefreshRequested(object sender, EventArgs e)
+        private void OnRefreshRequested(object sender, bool e)
         {
-            Control?.Reload();
+            if (e)
+            {
+                SetSource();
+            }
+            else
+            {
+                Control?.Reload();
+            }
         }
 
         private void OnPropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)

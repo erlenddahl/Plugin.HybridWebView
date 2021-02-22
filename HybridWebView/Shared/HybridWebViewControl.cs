@@ -73,7 +73,7 @@ namespace Plugin.HybridWebView.Shared
 
         internal event EventHandler OnForwardRequested;
 
-        internal event EventHandler OnRefreshRequested;
+        internal event EventHandler<bool> OnRefreshRequested;
 
         internal event EventHandler OnUserAgentChanged;
 
@@ -227,9 +227,9 @@ namespace Plugin.HybridWebView.Shared
         /// <summary>
         /// Refresh the current page if capable of doing so.
         /// </summary>
-        public void Refresh()
+        public void Refresh(bool hardRefresh = false)
         {
-            OnRefreshRequested?.Invoke(this, EventArgs.Empty);
+            OnRefreshRequested?.Invoke(this, hardRefresh);
         }
 
         /// <summary>

@@ -95,7 +95,7 @@ namespace Plugin.HybridWebView.UWP
             OnControlChanged?.Invoke(this, control);
         }
 
-        private void OnRefreshRequested(object sender, EventArgs e)
+        private void OnRefreshRequested(object sender, bool e)
         {
             SetSource();
         }

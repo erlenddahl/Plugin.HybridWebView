@@ -39,7 +39,7 @@ namespace Plugin.HybridWebView.Shared
 
         void GoForward();
 
-        void Refresh();
+        void Refresh(bool hardRefresh = false);
 
         Task<string> InjectJavascriptAsync(string js);
 

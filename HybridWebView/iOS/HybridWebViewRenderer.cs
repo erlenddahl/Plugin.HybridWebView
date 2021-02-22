@@ -334,10 +334,16 @@ namespace Plugin.HybridWebView.iOS
             Element.HandleScriptReceived(message.Body.ToString());
         }
 
-        private void OnRefreshRequested(object sender, EventArgs e)
+        private void OnRefreshRequested(object sender, bool e)
         {
-            if (Control == null) return;
-            Control.ReloadFromOrigin();
+            if (e)
+            {
+                SetSource();
+            }
+            else
+            {
+                Control?.ReloadFromOrigin();
+            }
         }
 
         private void OnForwardRequested(object sender, EventArgs e)
