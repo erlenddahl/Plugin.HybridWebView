@@ -1,6 +1,7 @@
 ﻿using Android.Content;
 using Xamarin.Forms;
 using System;
+using System.Linq;
 using Android.Webkit;
 using Android.Net.Http;
 using Android.Graphics;
@@ -158,11 +159,17 @@ namespace Plugin.HybridWebView.Droid
             await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.InjectedFunction);
 
             if (renderer.Element.EnableGlobalCallbacks)
-                foreach (var function in HybridWebViewControl.GlobalRegisteredCallbacks)
+            {
+                foreach (var function in HybridWebViewControl.GlobalRegisteredCallbacks.ToList())
+                {
                     await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.GenerateFunctionScript(function.Key));
+                }
+            }
 
-            foreach (var function in renderer.Element.LocalRegisteredCallbacks)
+            foreach (var function in renderer.Element.LocalRegisteredCallbacks.ToList())
+            {
                 await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.GenerateFunctionScript(function.Key));
+            }
 
             renderer.Element.CanGoBack = view.CanGoBack();
             renderer.Element.CanGoForward = view.CanGoForward();
