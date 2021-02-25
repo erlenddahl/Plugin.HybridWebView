@@ -5,24 +5,16 @@ namespace Plugin.HybridWebView.Droid
 {
     public class JavascriptValueCallback : Java.Lang.Object, IValueCallback
     {
-        public Java.Lang.Object Value { get; private set; }
-
-        private readonly WeakReference<HybridWebViewRenderer> _reference;
-
-        public JavascriptValueCallback(HybridWebViewRenderer renderer)
+        private Action<string> _callback;
+        
+        public JavascriptValueCallback(Action<string> callback)
         {
-            _reference = new WeakReference<HybridWebViewRenderer>(renderer);
+            _callback = callback;
         }
 
-        public void OnReceiveValue(Java.Lang.Object value)
+        public void OnReceiveValue(Java.Lang.Object result)
         {
-            if (_reference == null || !_reference.TryGetTarget(out _)) return;
-            Value = value;
-        }
-
-        public void Reset()
-        {
-            Value = null;
+            _callback?.Invoke(Convert.ToString(result));
         }
     }
 }

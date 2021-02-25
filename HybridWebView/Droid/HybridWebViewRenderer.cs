@@ -34,8 +34,6 @@ namespace Plugin.HybridWebView.Droid
 
         public static event EventHandler<Android.Webkit.WebView> OnControlChanged;
 
-        private JavascriptValueCallback _callback;
-
         public static void Initialize()
         {
             // ReSharper disable once UnusedVariable
@@ -116,7 +114,6 @@ namespace Plugin.HybridWebView.Droid
         private void SetupControl()
         {
             var webView = new Android.Webkit.WebView(Forms.Context);
-            _callback = new JavascriptValueCallback(this);
 
             // https://github.com/SKLn-Rad/Xam.Plugin.WebView.Webview/issues/11
             webView.LayoutParameters = new LayoutParams(LayoutParams.MatchParent, LayoutParams.MatchParent);
@@ -332,52 +329,38 @@ namespace Plugin.HybridWebView.Droid
                 return cookie;
             });
         }
-
-
+        
         internal async Task<string> OnJavascriptInjectionRequest(string js)
         {
             if (Element == null || Control == null) return string.Empty;
-
-            // fire!
-            _callback.Reset();
-
-            var response = string.Empty;
+            var response = new TaskCompletionSource<string>();
 
             Device.BeginInvokeOnMainThread(() =>
             {
                 try
                 {
-                    Control.EvaluateJavascript(js, _callback);
+                    Control.EvaluateJavascript(js, new JavascriptValueCallback(r => response.TrySetResult(formatReturnString(r))));
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    //ignore
+                    // response.TrySetException(e);
+                    response.TrySetResult(string.Empty);
                 }
             });
 
-            // wait!
-            await Task.Run(() =>
-            {
-                while (_callback.Value == null) { }
+            return await response.Task;
+        }
 
-                // Get the string and strip off the quotes
-                if (_callback.Value is Java.Lang.String)
-                {
-                    // Unescape that damn Unicode Java bull.
-                    response = Regex.Replace(_callback.Value.ToString(), @"\\[Uu]([0-9A-Fa-f]{4})", m => char.ToString((char)ushort.Parse(m.Groups[1].Value, NumberStyles.AllowHexSpecifier)));
-                    response = Regex.Unescape(response);
+        private string formatReturnString(string response)
+        {
+            // Unescape that damn Unicode Java bull.
+            string processed = Regex.Replace(response, @"\\[Uu]([0-9A-Fa-f]{4})", m => char.ToString((char)ushort.Parse(m.Groups[1].Value, NumberStyles.AllowHexSpecifier)));
+            processed = Regex.Unescape(processed);
 
-                    if (response.Equals("\"null\""))
-                        response = null;
+            if (response.StartsWith("\"") && response.EndsWith("\""))
+                processed = response.Substring(1, response.Length - 2);
 
-                    else if (response.StartsWith("\"") && response.EndsWith("\""))
-                        response = response.Substring(1, response.Length - 2);
-                }
-
-            });
-
-            // return
-            return response;
+            return processed == "null" ? string.Empty : processed;
         }
 
         internal void SetSource()
