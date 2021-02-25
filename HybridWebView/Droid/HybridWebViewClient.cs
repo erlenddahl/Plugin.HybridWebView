@@ -153,7 +153,9 @@ namespace Plugin.HybridWebView.Droid
         public override async void OnPageFinished(Android.Webkit.WebView view, string url)
         {
             if (_reference == null || !_reference.TryGetTarget(out var renderer)) return;
-            if (renderer.Element == null) return;
+            if (renderer.Element == null || !renderer.Element.Navigating) return;
+
+            renderer.Element.Navigating = false;
 
             renderer.Element.HandleNavigationCompleted(url);
             await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.InjectedFunction);
@@ -173,7 +175,6 @@ namespace Plugin.HybridWebView.Droid
 
             renderer.Element.CanGoBack = view.CanGoBack();
             renderer.Element.CanGoForward = view.CanGoForward();
-            renderer.Element.Navigating = false;
             renderer.Element.HandleContentLoaded();
         }
     }
