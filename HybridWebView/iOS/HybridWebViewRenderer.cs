@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
@@ -11,6 +12,8 @@ using Xamarin.Forms.Platform.iOS;
 using UIKit;
 using Xamarin.Forms;
 using System.Net;
+using System.Net.Http;
+using System.Reactive.Linq;
 
 [assembly: ExportRenderer(typeof(HybridWebViewControl), typeof(HybridWebViewRenderer))]
 namespace Plugin.HybridWebView.iOS
@@ -88,12 +91,25 @@ namespace Plugin.HybridWebView.iOS
             _navigationDelegate = new HybridWebViewNavigationDelegate(this);
             _contentController = new WKUserContentController();
             _contentController.AddScriptMessageHandler(this, "invokeAction");
+            
+            _contentController.AddUserScript(new WKUserScript(
+                (NSString) HybridWebViewControl.InjectedFunction,
+                WKUserScriptInjectionTime.AtDocumentStart,
+                true));
+
+            if (!string.IsNullOrEmpty(Element.InjectScript))
+            {
+                _contentController.AddUserScript(new WKUserScript(
+                    (NSString) Element.InjectScript,
+                    WKUserScriptInjectionTime.AtDocumentStart,
+                    true));
+            }
+            
             _configuration = new WKWebViewConfiguration
             {
                 UserContentController = _contentController,
                 AllowsInlineMediaPlayback = true
             };
-
 
             var wkWebView = new WKWebView(Frame, _configuration)
             {
@@ -101,7 +117,6 @@ namespace Plugin.HybridWebView.iOS
                 UIDelegate = this,
                 NavigationDelegate = _navigationDelegate,
             };
-
 
             HybridWebViewControl.CallbackAdded += OnCallbackAdded;
 
@@ -248,12 +263,13 @@ namespace Plugin.HybridWebView.iOS
 
             try
             {
-                var obj = await Control.EvaluateJavaScriptAsync(js).ConfigureAwait(true);
-                if (obj != null)
-                    response = obj.ToString();
+                NSObject? obj = await Control.EvaluateJavaScriptAsync(js).ConfigureAwait(true);
+                response = obj?.ToString() ?? string.Empty;
             }
-
-            catch (Exception) { /* The Webview might not be ready... */ }
+            catch (Exception)
+            {
+                 /* The Webview might not be ready... */
+            }
             return response;
         }
 
@@ -301,24 +317,15 @@ namespace Plugin.HybridWebView.iOS
             if (Control == null || Element == null) return;
 
             var headers = new NSMutableDictionary();
-
-            foreach (var header in Element.LocalRegisteredHeaders)
-            {
-                var key = new NSString(header.Key);
-                if (!headers.ContainsKey(key))
-                    headers.Add(key, new NSString(header.Value));
-            }
-
-            if (Element.EnableGlobalHeaders)
-            {
-                foreach (var header in HybridWebViewControl.GlobalRegisteredHeaders)
+            
+            Element.LocalRegisteredHeaders.ToObservable()
+                .Merge(HybridWebViewControl.GlobalRegisteredHeaders.ToObservable().Where(_ => Element.EnableGlobalHeaders))
+                .Where(header => !headers.ContainsKey((NSString) header.Key))
+                .Subscribe(header =>
                 {
-                    var key = new NSString(header.Key);
-                    if (!headers.ContainsKey(key))
-                        headers.Add(key, new NSString(header.Value));
-                }
-            }
-
+                    headers.Add((NSString) header.Key, (NSString) header.Value);
+                });
+            
             var url = new NSUrl(Element.Source);
             var request = new NSMutableUrlRequest(url)
             {

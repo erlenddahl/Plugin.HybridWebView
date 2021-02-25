@@ -201,6 +201,11 @@ namespace Plugin.HybridWebView.Shared
             }
         }
 
+        /// <summary>
+        /// Script string that should be injected at start of page
+        /// </summary>
+        public string InjectScript { get; set; }
+
         public HybridWebViewControl()
         {
             HorizontalOptions = VerticalOptions = LayoutOptions.FillAndExpand;

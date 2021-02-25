@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Android.OS;
@@ -385,7 +387,7 @@ namespace Plugin.HybridWebView.Droid
             SetCurrentUrl();
         }
 
-        private void LoadFromString()
+        private void LoadFromString(string content = null)
         {
             if (Element == null || Control == null || Element.Source == null) return;
 
@@ -393,8 +395,13 @@ namespace Plugin.HybridWebView.Droid
             var handler = Element.HandleNavigationStartRequest(Element.Source);
             if (handler.Cancel) return;
 
-            // Load
-            Control.LoadDataWithBaseURL(Element.BaseUrl ?? BaseUrl, Element.Source, MimeType, EncodingType, HistoryUri);
+            Device.BeginInvokeOnMainThread(() =>
+            {
+                Control.LoadDataWithBaseURL(
+                    Element.BaseUrl ?? BaseUrl,
+                    string.IsNullOrEmpty(content) ? Element.Source : content,
+                    MimeType, EncodingType, HistoryUri);
+            });
         }
 
         private void LoadFromFile()
@@ -410,24 +417,38 @@ namespace Plugin.HybridWebView.Droid
 
             var headers = new Dictionary<string, string>();
 
-            // Add Local Headers
-            foreach (var header in Element.LocalRegisteredHeaders)
-            {
-                if (!headers.ContainsKey(header.Key))
-                    headers.Add(header.Key, header.Value);
-            }
-
             // Add Global Headers
-            if (Element.EnableGlobalHeaders)
-            {
-                foreach (var header in HybridWebViewControl.GlobalRegisteredHeaders)
+            var client = new HttpClient();
+
+            Element.LocalRegisteredHeaders.ToObservable()
+                .Merge(HybridWebViewControl.GlobalRegisteredHeaders.ToObservable().Where(_ => Element.EnableGlobalHeaders))
+                .Where(header => !headers.ContainsKey(header.Key))
+                .Subscribe(header =>
                 {
-                    if (!headers.ContainsKey(header.Key))
-                        headers.Add(header.Key, header.Value);
-                }
+                    var (key, value) = header;
+                    headers.Add(key, value);
+                    client.DefaultRequestHeaders.Add(key, value);
+                });
+
+            var uri = new Uri(Element.Source);
+            BaseUrl = $"{uri.Scheme}://{uri.Host}";
+
+            if (string.IsNullOrEmpty(Element.InjectScript))
+            {
+                Control.LoadUrl(Element.Source, headers);
+                return;   
             }
 
-            Control.LoadUrl(Element.Source, headers);
+            //If there is as script to inject, fetch the data with HTTP client
+            const string insertAfter = "<head>";
+            
+            Observable.FromAsync(() => client.GetStringAsync(Element.Source))
+                .Select(html => html.Insert(
+                    html.IndexOf(insertAfter, StringComparison.Ordinal) + insertAfter.Length,
+                    $"<script id='HybridWebViewControlInjectedFunction' type='text/javascript'>{HybridWebViewControl.InjectedFunction}</script>" +
+                    $"<script id='HybridWebViewControlInjectedScript' type='text/javascript'>{Element.InjectScript}</script>" 
+                ))
+                .Subscribe(LoadFromString);
         }
 
 
