@@ -11,5 +11,7 @@ namespace Plugin.HybridWebView.Shared.Delegates
         /// The error code encountered
         /// </summary>
         public int Code { get; set; }
+
+        public override string ToString() => $"{Code}:{Uri}";
     }
 }
