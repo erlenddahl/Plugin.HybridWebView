@@ -84,6 +84,12 @@ namespace Plugin.HybridWebView.Shared
         internal readonly Dictionary<string, Action<string>> LocalRegisteredCallbacks = new Dictionary<string, Action<string>>();
 
         /// <summary>
+        /// If set, the WebViewClient will send requests through this function.
+        /// Only works on Android.
+        /// </summary>
+        public Func<string, ResourceResponse> ShouldInterceptRequest { get; set; }
+
+        /// <summary>
         /// A dictionary containing all headers to be injected into the request. Local headers take precedence over global ones.
         /// </summary>
         public readonly Dictionary<string, string> LocalRegisteredHeaders = new Dictionary<string, string>();

@@ -22,6 +22,7 @@ namespace Plugin.HybridWebView.Droid
     /// <summary>
     /// Interface for HybridWebView
     /// </summary>
+    [Obsolete]
     public class HybridWebViewRenderer : ViewRenderer<HybridWebViewControl, Android.Webkit.WebView>
     {
         public static string MimeType = "text/html";
@@ -124,6 +125,10 @@ namespace Plugin.HybridWebView.Droid
             webView.Settings.JavaScriptEnabled = true;
             webView.Settings.DomStorageEnabled = true;
 
+            webView.Settings.AllowFileAccess = true;
+            webView.Settings.AllowFileAccessFromFileURLs = true;
+            webView.Settings.AllowUniversalAccessFromFileURLs = true;
+            webView.Settings.AllowContentAccess = true;
 
             webView.AddJavascriptInterface(new HybridWebViewBridge(this), "bridge");
             webView.SetWebViewClient(new HybridWebViewClient(this));

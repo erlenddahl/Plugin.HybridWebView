@@ -1,11 +1,13 @@
 ﻿using Android.Content;
 using Xamarin.Forms;
 using System;
+using System.IO;
 using System.Linq;
 using Android.Webkit;
 using Android.Net.Http;
 using Android.Graphics;
 using Plugin.HybridWebView.Shared;
+using WebView = Android.Webkit.WebView;
 
 namespace Plugin.HybridWebView.Droid
 {
@@ -16,6 +18,32 @@ namespace Plugin.HybridWebView.Droid
         public HybridWebViewClient(HybridWebViewRenderer renderer)
         {
             _reference = new WeakReference<HybridWebViewRenderer>(renderer);
+        }
+
+        public override WebResourceResponse? ShouldInterceptRequest(WebView? view, IWebResourceRequest? request)
+        {
+            if (request?.Url != null && _reference != null && _reference.TryGetTarget(out var renderer) && renderer.Element?.ShouldInterceptRequest != null)
+            {
+                try
+                {
+                    var res = renderer.Element.ShouldInterceptRequest(request.Url.ToString());
+                    if (res != null)
+                    {
+                        if (string.IsNullOrEmpty(res.MimeType))
+                        {
+                            var ext = request.Url.ToString().Split('.').LastOrDefault();
+                            if (!string.IsNullOrEmpty(ext)) res.MimeType = MimeTypeMap.Singleton.GetMimeTypeFromExtension(ext);
+                        }
+                        return new WebResourceResponse(res.MimeType, res.Encoding, res.Contents);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex.Message);
+                }
+            }
+
+            return base.ShouldInterceptRequest(view, request);
         }
 
         public override void OnReceivedHttpError(Android.Webkit.WebView view, IWebResourceRequest request, WebResourceResponse errorResponse)
