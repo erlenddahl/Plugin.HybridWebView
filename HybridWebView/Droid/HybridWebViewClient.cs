@@ -1,6 +1,7 @@
 ﻿using Android.Content;
 using Xamarin.Forms;
 using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using Android.Webkit;
@@ -24,26 +25,52 @@ namespace Plugin.HybridWebView.Droid
         {
             if (request?.Url != null && _reference != null && _reference.TryGetTarget(out var renderer) && renderer.Element?.ShouldInterceptRequest != null)
             {
-                try
-                {
-                    var res = renderer.Element.ShouldInterceptRequest(request.Url.ToString());
-                    if (res != null)
-                    {
-                        if (string.IsNullOrEmpty(res.MimeType))
-                        {
-                            var ext = request.Url.ToString().Split('.').LastOrDefault();
-                            if (!string.IsNullOrEmpty(ext)) res.MimeType = MimeTypeMap.Singleton.GetMimeTypeFromExtension(ext);
-                        }
-                        return new WebResourceResponse(res.MimeType, res.Encoding, res.Contents);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine(ex.Message);
-                }
+                if (TryIntercept(renderer, request.Url.ToString(), out var response))
+                    return response;
             }
 
             return base.ShouldInterceptRequest(view, request);
+        }
+
+        [Obsolete]
+        public override WebResourceResponse? ShouldInterceptRequest(WebView? view, string? url)
+        {
+            if (url != null && _reference != null && _reference.TryGetTarget(out var renderer) && renderer.Element?.ShouldInterceptRequest != null)
+            {
+                if (TryIntercept(renderer, url, out var response))
+                    return response;
+            }
+
+            return base.ShouldInterceptRequest(view, url);
+        }
+
+        private bool TryIntercept(HybridWebViewRenderer renderer, string url, out WebResourceResponse response)
+        {
+            try
+            {
+                var res = renderer.Element.ShouldInterceptRequest(url);
+                if (res != null)
+                {
+                    if (string.IsNullOrEmpty(res.MimeType))
+                    {
+                        var ext = url.Split('.').LastOrDefault();
+                        if (!string.IsNullOrEmpty(ext)) res.MimeType = MimeTypeMap.Singleton.GetMimeTypeFromExtension(ext);
+                    }
+                    response = new WebResourceResponse(res.MimeType, res.Encoding, res.Contents);
+                    if (response.ResponseHeaders == null) response.ResponseHeaders = new ConcurrentDictionary<string, string>();
+                    response.ResponseHeaders.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+                    response.ResponseHeaders.Add("Pragma", "no-cache");
+                    response.ResponseHeaders.Add("Expires", "0");
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex.Message);
+            }
+
+            response = null;
+            return false;
         }
 
         public override void OnReceivedHttpError(Android.Webkit.WebView view, IWebResourceRequest request, WebResourceResponse errorResponse)
