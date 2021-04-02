@@ -7,6 +7,7 @@ using System.Linq;
 using Android.Webkit;
 using Android.Net.Http;
 using Android.Graphics;
+using Android.Views;
 using Plugin.HybridWebView.Shared;
 using WebView = Android.Webkit.WebView;
 
@@ -32,7 +33,6 @@ namespace Plugin.HybridWebView.Droid
             return base.ShouldInterceptRequest(view, request);
         }
 
-        [Obsolete]
         public override WebResourceResponse? ShouldInterceptRequest(WebView? view, string? url)
         {
             if (url != null && _reference != null && _reference.TryGetTarget(out var renderer) && renderer.Element?.ShouldInterceptRequest != null)
@@ -57,10 +57,18 @@ namespace Plugin.HybridWebView.Droid
                         if (!string.IsNullOrEmpty(ext)) res.MimeType = MimeTypeMap.Singleton.GetMimeTypeFromExtension(ext);
                     }
                     response = new WebResourceResponse(res.MimeType, res.Encoding, res.Contents);
-                    if (response.ResponseHeaders == null) response.ResponseHeaders = new ConcurrentDictionary<string, string>();
-                    response.ResponseHeaders.Add("Cache-Control", "no-cache, no-store, must-revalidate");
-                    response.ResponseHeaders.Add("Pragma", "no-cache");
-                    response.ResponseHeaders.Add("Expires", "0");
+
+                    try
+                    {
+                        if (response.ResponseHeaders == null) response.ResponseHeaders = new ConcurrentDictionary<string, string>();
+                        response.ResponseHeaders.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+                        response.ResponseHeaders.Add("Pragma", "no-cache");
+                        response.ResponseHeaders.Add("Expires", "0");
+                    }catch(Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Older Android; cache headers couldn't be set.");
+                    }
+                    
                     return true;
                 }
             }
