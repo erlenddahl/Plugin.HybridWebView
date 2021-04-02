@@ -3,8 +3,8 @@
   <PropertyGroup>
     <!--Work around so the conditions work below-->
     <TargetFrameworks></TargetFrameworks>
-    <TargetFrameworks Condition=" '$(OS)' == 'Windows_NT' ">netstandard1.0;netstandard2.0;Xamarin.iOS10;MonoAndroid10.0;uap10.0.18362;Xamarin.Mac20</TargetFrameworks>
-    <TargetFrameworks Condition=" '$(OS)' != 'Windows_NT' ">netstandard1.0;netstandard2.0;Xamarin.iOS10;MonoAndroid10.0;Xamarin.Mac20</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(OS)' == 'Windows_NT' ">netstandard1.0;netstandard2.0;Xamarin.iOS10;MonoAndroid10.0;uap10.0.18362</TargetFrameworks>
+    <TargetFrameworks Condition=" '$(OS)' != 'Windows_NT' ">netstandard1.0;netstandard2.0;Xamarin.iOS10;MonoAndroid10.0</TargetFrameworks>
     <!--Feel free to add as many targets as you need below
     netstandard1.0;netstandard2.0;MonoAndroid81;Xamarin.iOS10;uap10.0.16299;Xamarin.TVOS10;Xamarin.WatchOS10;Xamarin.Mac20;Tizen40
     For UWP update the version number with a version number you have installed.
@@ -14,11 +14,11 @@
     <PackageId>Plugin.HybridWebView</PackageId>
     
     <Product>$(AssemblyName) ($(TargetFramework))</Product>
-    <AssemblyVersion>1.0.0.2</AssemblyVersion>
+    <AssemblyVersion>1.0.0.3</AssemblyVersion>
     <AssemblyFileVersion>1.0.0.2</AssemblyFileVersion>
-    <Version>1.0.0.2</Version>
+    <Version>1.0.0.3</Version>
     <PackageVersion>1.0.0.2-alpha</PackageVersion>
-    <PackOnBuild>true</PackOnBuild>
+    <PackOnBuild>false</PackOnBuild>
     <NeutralLanguage>en</NeutralLanguage>
     <LangVersion>default</LangVersion>
     <DefineConstants>$(DefineConstants);</DefineConstants>
@@ -45,7 +45,7 @@
     <Owners>Vinicius Dutra</Owners>
     <Authors>Ryan Dixon, Vinicius Dutra</Authors>
     <Copyright>Copyright 2018</Copyright>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)'=='Debug' ">
@@ -53,7 +53,7 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)'=='Release' ">
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
@@ -78,18 +78,23 @@
     -->
   </ItemGroup>
 
-  <ItemGroup Condition=" $(TargetFramework.StartsWith('MonoAndroid')) ">
+  <ItemGroup Condition="$(TargetFramework.StartsWith('MonoAndroid')) ">
     <Compile Include="Droid\**\*.cs" />
   </ItemGroup>
-
-  <ItemGroup Condition=" $(TargetFramework.StartsWith('Xamarin.iOS')) ">
+  
+  <ItemGroup Condition="$(TargetFramework.StartsWith('Xamarin.iOS')) ">
     <Compile Include="iOS\**\*.cs" />
   </ItemGroup>
 
-
-  <ItemGroup Condition=" $(TargetFramework.StartsWith('Xamarin.Mac')) ">
+  <!--
+  <ItemGroup Condition="$(TargetFramework.StartsWith('Xamarin.Mac')) ">
     <Compile Include="macOS\**\*.cs" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'Xamarin.Mac20'">
+    <PackageReference Include="System.Reactive" Version="5.0.0" />
+  </ItemGroup>
+  -->
 
 
   <ItemGroup Condition="'$(TargetFramework)' == 'MonoAndroid10.0'">
@@ -103,11 +108,6 @@
 
 
   <ItemGroup Condition="'$(TargetFramework)' == 'Xamarin.iOS10'">
-    <PackageReference Include="System.Reactive" Version="5.0.0" />
-  </ItemGroup>
-
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'Xamarin.Mac20'">
     <PackageReference Include="System.Reactive" Version="5.0.0" />
   </ItemGroup>
 
