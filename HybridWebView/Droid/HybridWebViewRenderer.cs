@@ -22,7 +22,6 @@ namespace Plugin.HybridWebView.Droid
     /// <summary>
     /// Interface for HybridWebView
     /// </summary>
-    [Obsolete]
     public class HybridWebViewRenderer : ViewRenderer<HybridWebViewControl, Android.Webkit.WebView>
     {
         public static string MimeType = "text/html";
