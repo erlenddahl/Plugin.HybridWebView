@@ -129,6 +129,7 @@ namespace Plugin.HybridWebView.Droid
             webView.Settings.AllowUniversalAccessFromFileURLs = true;
             webView.Settings.AllowContentAccess = true;
             webView.Settings.SetAppCacheEnabled(false);
+            webView.Settings.CacheMode = CacheModes.NoCache;
 
             webView.AddJavascriptInterface(new HybridWebViewBridge(this), "bridge");
             webView.SetWebViewClient(new HybridWebViewClient(this));
