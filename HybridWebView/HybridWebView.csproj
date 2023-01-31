@@ -61,7 +61,7 @@
     <Compile Include="Shared\**\*.cs" />
     <Compile Remove="Shared\ResourceResponse.cs" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Xamarin.Forms" Version="5.0.0.2125" />
+    <PackageReference Include="Xamarin.Forms" Version="5.0.0.2545" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
   </ItemGroup>
 
