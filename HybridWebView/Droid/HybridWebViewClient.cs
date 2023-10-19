@@ -2,6 +2,7 @@
 using Xamarin.Forms;
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Android.Webkit;
@@ -218,27 +219,36 @@ namespace Plugin.HybridWebView.Droid
             if (_reference == null || !_reference.TryGetTarget(out var renderer)) return;
             if (renderer.Element == null || !renderer.Element.Navigating) return;
 
-            renderer.Element.Navigating = false;
-
-            renderer.Element.HandleNavigationCompleted(url);
-            await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.InjectedFunction);
-
-            if (renderer.Element.EnableGlobalCallbacks)
+            // This function used to crash somewhere below when closing the ReaderPage after a book load failed
+            // (renderer.Element was nulled out partway through). Put it in a try-catch to avoid NPEs.
+            try
             {
-                foreach (var function in HybridWebViewControl.GlobalRegisteredCallbacks.ToList())
+                renderer.Element.Navigating = false;
+
+                renderer.Element.HandleNavigationCompleted(url);
+                await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.InjectedFunction);
+
+                if (renderer.Element.EnableGlobalCallbacks)
+                {
+                    foreach (var function in HybridWebViewControl.GlobalRegisteredCallbacks.ToList())
+                    {
+                        await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.GenerateFunctionScript(function.Key));
+                    }
+                }
+
+                foreach (var function in renderer.Element.LocalRegisteredCallbacks.ToList())
                 {
                     await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.GenerateFunctionScript(function.Key));
                 }
-            }
 
-            foreach (var function in renderer.Element.LocalRegisteredCallbacks.ToList())
+                renderer.Element.CanGoBack = view.CanGoBack();
+                renderer.Element.CanGoForward = view.CanGoForward();
+                renderer.Element.HandleContentLoaded();
+            }
+            catch (Exception ex)
             {
-                await renderer.OnJavascriptInjectionRequest(HybridWebViewControl.GenerateFunctionScript(function.Key));
+                Debug.WriteLine(ex.Message);
             }
-
-            renderer.Element.CanGoBack = view.CanGoBack();
-            renderer.Element.CanGoForward = view.CanGoForward();
-            renderer.Element.HandleContentLoaded();
         }
     }
 }
